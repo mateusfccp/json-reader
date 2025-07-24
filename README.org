@@ -1,8 +1,100 @@
-* Json-Reader 
+* `json-reader`
+
+Reader macro for parsing JSON expressions within Common Lisp.
 
 ** Usage
 
+There are a few ways to use `json-reader`.
+
+*** Global enable/disable
+
+You can enable the reader macro with the `enable` function and disable it with
+the `disable` function when you don't want to use it anymore.
+
+Enabling the reader mode when it is already enabled or disabling it when it is
+not enabled will be a no-op.
+
+#+NAME: Enable/disable
+#+BEGIN_SRC lisp
+  (defun create-nice-json ()
+    (prog2
+     (json-reader:enable)
+     {"foo": 10}
+     (json-reader:disable)))
+#+END_SRC
+
+*** Scoped usage
+
+To avoid having to deal with the fact that the last expression of a form body
+has to be a call `disable`, you can use `scoped`, which will accept a form body
+and return the last expression automatically.
+
+#+NAME: Enable/disable
+#+BEGIN_SRC lisp
+  (defun create-nice-json ()
+    (json-reader:scoped
+     (let ((foo-value (generate-int))))
+     {"foo": foo-value}))
+#+END_SRC
+
+** Syntax
+
+`json-reader` tries to parse a JSON expression in them most natural and
+intuitive way, but there are obvious limitations.
+
+`json-reader` parses the JSON expressions in a way that is compatible with the
+[`jzon`](https://github.com/Zulu-Inuoe/jzon) package.
+
+
+#+NAME: Basic examples
+#+BEGIN_SRC lisp
+  CL-USER> true
+  t
+  CL-USER> false
+  nil
+  CL-USER> null ;; Returns the 'null symbol
+  NULL
+  CL-USER> [1, 2, 3]
+  #(1 2 3)
+  CL-USER> [1, 2, [3, 4, 5]]
+  #(1 2 #(3 4 5))
+  CL-USER> {"foo": "bar", "baz": 10}
+  #<HASH-TABLE :TEST EQUAL :COUNT 2 {7007D40CD3}>
+#+END_SRC
+
+For integers, floats and strings, they are just returned as is, as they are
+already perfectly compatible with `jzon`.
+
+You can use Common Lisp expressions within the JSON expression with no problem,
+as long as the evaluated value is a valid JSON value.
+
+#+NAME: Using Common Lisp expressions within JSON expressions
+#+BEGIN_SRC lisp
+CL-USER> [1, 2, (+ 1 2)]
+#(1 2 3)
+CL-USER> (defparameter *key* "foo")
+*KEY*
+CL-USER> {*key*: "bar"}
+#<HASH-TABLE :TEST EQUAL :COUNT 1 {7005810833}>
+CL-USER> (defparameter *key* 10)
+*KEY*
+CL-USER> {*key*: "bar"} ;; *key* is a number, which is an invalid JSON key
+TODO: Error
+#+END_SRC
+
+When dealing with collections (lists or objects), `json-reader` will spread
+lists.
+
+#+NAME: List spread
+#+BEGIN_SRC lisp
+CL-USER> [1, 2, (loop for i from 10 to 13 collect i)]
+#(1 2 3 10 11 12 13)
+CL-USER> {"foo": "bar", (loop for i from 10 to 13 collect (write-to-string i): i)}
+#+END_SRC
+
 ** Installation
+
+TODO: Quicklisp installation
 
 ** Author
 
