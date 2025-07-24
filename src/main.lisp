@@ -14,7 +14,6 @@
 
 (defun normalize-json-value (value)
   "Normalize a JSON VALUE to a LISP equivalent."
-  (break)
   (cond
     ((symbolp value)
      (case value
