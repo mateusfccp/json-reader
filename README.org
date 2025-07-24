@@ -43,7 +43,7 @@ and return the last expression automatically.
 intuitive way, but there are obvious limitations.
 
 =json-reader= parses the JSON expressions in a way that is compatible with the
-[[https://github.com/Zulu-Inuoe/jzon][=json=]] package.
+=[[https://github.com/Zulu-Inuoe/jzon][jzon]]= package.
 
 
 #+NAME: Basic examples
