@@ -1,0 +1,17 @@
+* Json-Reader 
+
+** Usage
+
+** Installation
+
+** Author
+
++ Mateus Felipe Cordeiro Caetano Pinto (mateusfccp@gmail.com)
+
+** Copyright
+
+Copyright (c) 2025 Mateus Felipe Cordeiro Caetano Pinto (mateusfccp@gmail.com)
+
+** License
+
+Licensed under the MIT License.
