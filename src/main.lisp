@@ -108,21 +108,31 @@ JSON-COLLECTION-HAS-TRAILING-COMMA error is signaled."
 	       input-stream
 	       recursive-p)))
 	(loop
+	  with last-element = nil
 	  with should-be-comma = nil
 	  with elements = (consify-colons-on-list elements)
 	  for element in elements
 	  if (and should-be-comma (is-comma element))
 	    do (setf should-be-comma nil)
 	  else if (and should-be-comma (not (is-comma element)))
-		 do (error 'json-elements-not-separated-by-comma)
-	  else if (and (not should-be-comma) (is-comma element))
-		 do (error 'json-sequential-commas)
+		 do (error 'json-elements-not-separated-by-comma
+			   :object elements
+			   :first-element last-element
+			   :second-element element)
+	  else if (and (not should-be-comma)
+		       (is-comma element))
+		 do (error 'json-unexpected-comma
+			   :object elements
+			   :after-element last-element)
           else
 	    do (setf should-be-comma t)
 	    and collect element into final-list
+	    and do (setf last-element element)
 	  finally (return
-		    (if (null should-be-comma)
-			(error 'json-collection-has-trailing-comma)
+		    (if (and (not (null final-list))
+			     (null should-be-comma))
+			(error 'json-collection-has-trailing-comma
+			       :object elements)
 			final-list)))))))
 
 (defun consify-colons-on-list (list)

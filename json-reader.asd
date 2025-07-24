@@ -6,8 +6,9 @@
   :license "MIT"
   :components ((:module "src"
                 :components
-                ((:file "main"
-		  :file "constants"))))
+                ((:file "main")
+		 (:file "conditions")
+		 (:file "constants"))))
   :description "A reader macro to read JSON within Common Lisp."
   :in-order-to ((test-op (test-op "json-reader/tests"))))
 
