@@ -1,15 +1,15 @@
-* `json-reader`
+* =json-reader=
 
 Reader macro for parsing JSON expressions within Common Lisp.
 
 ** Usage
 
-There are a few ways to use `json-reader`.
+There are a few ways to use =json-reader=.
 
 *** Global enable/disable
 
-You can enable the reader macro with the `enable` function and disable it with
-the `disable` function when you don't want to use it anymore.
+You can enable the reader macro with the =enable= function and disable it with
+the =disable= function when you don't want to use it anymore.
 
 Enabling the reader mode when it is already enabled or disabling it when it is
 not enabled will be a no-op.
@@ -26,7 +26,7 @@ not enabled will be a no-op.
 *** Scoped usage
 
 To avoid having to deal with the fact that the last expression of a form body
-has to be a call `disable`, you can use `scoped`, which will accept a form body
+has to be a call =disable=, you can use =scoped=, which will accept a form body
 and return the last expression automatically.
 
 #+NAME: Enable/disable
@@ -39,11 +39,11 @@ and return the last expression automatically.
 
 ** Syntax
 
-`json-reader` tries to parse a JSON expression in them most natural and
+=json-reader= tries to parse a JSON expression in them most natural and
 intuitive way, but there are obvious limitations.
 
-`json-reader` parses the JSON expressions in a way that is compatible with the
-[`jzon`](https://github.com/Zulu-Inuoe/jzon) package.
+=json-reader= parses the JSON expressions in a way that is compatible with the
+[[https://github.com/Zulu-Inuoe/jzon][=json=]] package.
 
 
 #+NAME: Basic examples
@@ -63,7 +63,7 @@ intuitive way, but there are obvious limitations.
 #+END_SRC
 
 For integers, floats and strings, they are just returned as is, as they are
-already perfectly compatible with `jzon`.
+already perfectly compatible with =jzon=.
 
 You can use Common Lisp expressions within the JSON expression with no problem,
 as long as the evaluated value is a valid JSON value.
@@ -82,7 +82,7 @@ CL-USER> {*key*: "bar"} ;; *key* is a number, which is an invalid JSON key
 TODO: Error
 #+END_SRC
 
-When dealing with collections (lists or objects), `json-reader` will spread
+When dealing with collections (lists or objects), =json-reader= will spread
 lists.
 
 #+NAME: List spread
