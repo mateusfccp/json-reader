@@ -41,7 +41,7 @@ and return the last expression automatically.
 intuitive way, but there are obvious limitations.
 
 `json-reader` parses the JSON expressions in a way that is compatible with the
-[jzon](https://github.com/Zulu-Inuoe/jzon) package.
+[`jzon`](https://github.com/Zulu-Inuoe/jzon) package.
 
 
 ```lisp
