@@ -1,7 +1,44 @@
 (uiop:define-package json-reader
-    (:use #:cl))
+    (:use #:cl)
+  (:export #:enable
+	   #:disable
+	   #:*reader-macro-enabled*))
 
 (in-package #:json-reader)
+
+(defparameter *reader-macro-enabled* nil
+  "Whether the json-reader macro is enabled.")
+
+(defparameter *old-readtable* nil
+  "A place to store the original readtable before modification.")
+
+(defun enable ()
+  "Enable the json-reader macro on READTABLE.
+
+If it is already enabled, this functions is a no-op."
+  (when (null *reader-macro-enabled*)
+    (setf *old-readtable* *readtable*)
+    (setf *readtable* (copy-readtable))
+
+    (set-macro-character +left-bracket+ 'read-left-bracket)
+    (set-macro-character +left-brace+ 'read-left-brace)
+
+    (defparameter true t)
+    (defparameter false nil)
+
+    (setf *reader-macro-enabled* t)))
+
+(defun disable ()
+  "Disable the json-reader macro.
+
+If it is not enabled, this function is a no-op."
+  (unless (null *reader-macro-enabled*)
+    (makunbound 'false)
+    (makunbound 'true)
+
+    (setf *readtable* *old-readtable*)
+    (makunbound '*old-readtable*)
+    (setf *reader-macro-enabled* nil)))
 
 (defun create-json-hash-table (&rest pairs)
   "Creates a HASH-TABLE based on a list of PAIRS."
@@ -48,8 +85,6 @@ VECTOR with the internal elements."
       finally
 	 (return `(vector ,@result)))))
 
-(set-macro-character +left-bracket+ 'read-left-bracket)
-
 (defun read-left-brace (stream char)
   "Reads the left brace character and parses the remaining STREAM with
 READ-NEXT-OBJECT.
@@ -72,8 +107,6 @@ HASH-TABLE with the internal elements."
 	  collect normalized-element into result
 	finally (return
 		  `(create-json-hash-table ,@result))))))
-
-(set-macro-character +left-brace+ 'read-left-brace)
 
 (defun reserve-character (character &optional (readtable *readtable*))
   "Reserve CHARACTER to make the reader consider the char it's own function."
