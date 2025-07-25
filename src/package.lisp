@@ -1,7 +1,5 @@
 (uiop:define-package json-reader
     (:use #:cl)
-  (:export #:enable
-	   #:disable
-	   #:scoped
-	   #:scoped2
+  (:export #:json-reader-enable
+	   #:json-reader-disable
 	   #:*reader-macro-enabled*))
