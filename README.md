@@ -4,35 +4,34 @@ Reader macro for parsing JSON expressions within Common Lisp.
 
 ## Usage
 
-There are a few ways to use `json-reader`.
-
-### Global enable/disable
-
-You can enable the reader macro with the `enable` function and disable it with
-the `disable` function when you don't want to use it anymore.
+To enable the reader macro with the `json-reader-enable` function and disable
+it with the `json-reader-disable` function when you don't want to use it
+anymore.
 
 Enabling the reader mode when it is already enabled or disabling it when it is
 not enabled will be a no-op.
 
 ```lisp
+  (json-reader:json-reader-enable)
   (defun create-nice-json ()
-    (prog2
-     (json-reader:enable)
-     {"foo": 10}
-     (json-reader:disable)))
+     {"foo": 10})
+  (json-reader:json-reader-disable)
 ```
 
-### Scoped usage
-
-To avoid having to deal with the fact that the last expression of a form body
-has to be a call `disable`, you can use `scoped`, which will accept a form body
-and return the last expression automatically.
+You can check whether the macro is enabled through the variable
+`*json-reader-enabled*`.
 
 ```lisp
-  (defun create-nice-json ()
-    (json-reader:scoped
-     (let ((foo-value (generate-int))))
-     {"foo": foo-value}))
+  CL-USER> json-reader:*json-reader-enabled*
+  NIL
+  CL-USER> (json-reader:json-reader-enable)
+  NIL
+  CL-USER> json-reader:*json-reader-enabled*
+  T
+  CL-USER> (json-reader:json-reader-disable)
+  NIL
+  CL-USER> json-reader:*json-reader-enabled*
+  NIL
 ```
 
 ## Syntax
