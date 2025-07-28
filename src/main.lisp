@@ -17,18 +17,7 @@ If it is already enabled, this functions is a no-op."
 
       (set-macro-character +left-bracket+ 'read-left-bracket)
       (set-macro-character +left-brace+ 'read-left-brace)
-      ;; (set-macro-character +colon+ nil)
-      (set-macro-character
-       #\:
-       (lambda (stream char)
-	 (let ((first-char (peek-char nil stream nil nil t)))
-	   (if (eq first-char #\Space)
-	       nil
-	       (let ((*readtable* *old-readtable*))
-		 (unread-char +colon+ stream)
-		 (read stream t nil t)
-		 ))))
-       t)
+      (set-macro-character +colon+ 'read-colon t)
 
       (setf *json-reader-enabled* t))))
 
