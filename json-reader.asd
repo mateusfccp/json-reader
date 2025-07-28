@@ -8,6 +8,7 @@
   :components ((:module "src"
                 :components
                 ((:file "package")
+		 (:file "globals")
 		 (:file "conditions")
 		 (:file "constants")
 		 (:file "core")
