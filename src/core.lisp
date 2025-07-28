@@ -95,12 +95,15 @@ A dotted pair is a CONS whose CDR is not a CONS."
   "Reads the colon character in a way that tries to allow it to be used as an
 independent symbol but fallback to keyword when followed by other characters."
   (declare (ignore char))
-  (let ((first-char (peek-char nil stream nil nil t)))
-    (if (eq first-char #\Space)
-	nil
-	(let ((*readtable* *old-readtable*))
-	  (unread-char +colon+ stream)
-	  (read stream t nil t)))))
+  (let ((next-char (peek-char nil stream nil nil t)))
+    (if (and next-char (whitespacep next-char))
+        (intern ":")
+        (let ((*readtable* (if (and (boundp '*old-readtable*)
+                                    (readtablep *old-readtable*))
+                               *old-readtable*
+                               (copy-readtable nil))))
+          (unread-char #\: stream)
+          (read stream t nil t)))))
 
 (defun read-left-bracket (stream char)
   "Reads the left bracket character and parses the remaining STREAM with
