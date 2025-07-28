@@ -4,6 +4,7 @@
   :mailto "mateusfccp@gmail.com"
   :homepage "https://github.com/mateusfccp/json-reader"
   :license "MIT"
+  :depends-on (#:alexandria #:serapeum)
   :components ((:module "src"
                 :components
                 ((:file "package")

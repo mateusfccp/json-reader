@@ -17,10 +17,18 @@ If it is already enabled, this functions is a no-op."
 
       (set-macro-character +left-bracket+ 'read-left-bracket)
       (set-macro-character +left-brace+ 'read-left-brace)
-      (set-macro-character +colon+ nil)
-
-      (defparameter true t)
-      (defparameter false nil)
+      ;; (set-macro-character +colon+ nil)
+      (set-macro-character
+       #\:
+       (lambda (stream char)
+	 (let ((first-char (peek-char nil stream nil nil t)))
+	   (if (eq first-char #\Space)
+	       nil
+	       (let ((*readtable* *old-readtable*))
+		 (unread-char +colon+ stream)
+		 (read stream t nil t)
+		 ))))
+       t)
 
       (setf *json-reader-enabled* t))))
 
@@ -30,8 +38,6 @@ If it is already enabled, this functions is a no-op."
 If it is not enabled, this function is a no-op."
   '(eval-when (:compile-toplevel :load-toplevel :execute)
     (unless (null *json-reader-enabled*)
-      (makunbound 'false)
-      (makunbound 'true)
 
       (setf *readtable* *old-readtable*)
       (makunbound '*old-readtable*)
