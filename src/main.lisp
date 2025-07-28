@@ -1,11 +1,5 @@
 (in-package #:json-reader)
 
-(defparameter *json-reader-enabled* nil
-  "Whether the json-reader macro is enabled.")
-
-(defparameter *old-readtable* nil
-  "A place to store the original readtable before modification.")
-
 (defmacro json-reader-enable ()
   "Enable the json-reader macro on READTABLE.
 
@@ -29,5 +23,5 @@ If it is not enabled, this function is a no-op."
     (unless (null *json-reader-enabled*)
 
       (setf *readtable* *old-readtable*)
-      (makunbound '*old-readtable*)
+      (setf *old-readtable* nil)
       (setf *json-reader-enabled* nil))))
