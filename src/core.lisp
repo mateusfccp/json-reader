@@ -91,6 +91,17 @@ A dotted pair is a CONS whose CDR is not a CONS."
        (otherwise value)))
     (t value)))
 
+(defun read-colon (stream char)
+  "Reads the colon character in a way that tries to allow it to be used as an
+independent symbol but fallback to keyword when followed by other characters."
+  (declare (ignore char))
+  (let ((first-char (peek-char nil stream nil nil t)))
+    (if (eq first-char #\Space)
+	nil
+	(let ((*readtable* *old-readtable*))
+	  (unread-char +colon+ stream)
+	  (read stream t nil t)))))
+
 (defun read-left-bracket (stream char)
   "Reads the left bracket character and parses the remaining STREAM with
 READ-NEXT-OBJECT.
