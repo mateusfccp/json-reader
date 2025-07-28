@@ -83,8 +83,20 @@ lists.
 ```lisp
 CL-USER> [1, 2, (loop for i from 10 to 13 collect i)]
 #(1 2 3 10 11 12 13)
-CL-USER> {"foo": "bar", (loop for i from 10 to 13 collect (write-to-string i): i)}
 ```
+
+For objects, nested objects are merged together. This, combined with the list
+spread, allow for powerful dynamic constructions.
+
+```lisp
+CL-USER> {"a": "b", {"c": "d", "e": "f"}}
+;; Equivalent to {"a": "b", "c": "d", "e": "f"}
+#<HASH-TABLE :TEST EQUAL :COUNT 3 {7008275FE3}>
+CL-USER> {"foo": "bar", (loop for i from 10 to 13 collect {(write-to-string i): i})}
+;; Equivalent to {"foo": "bar", "10": 10, "11": 11, "12": 12, "13": 13}
+#<HASH-TABLE :TEST EQUAL :COUNT 5 {7008275FE3}>
+```
+
 
 ## Installation
 
