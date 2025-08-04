@@ -1,6 +1,7 @@
 (uiop:define-package json-reader
     (:use #:cl
-	  #:alexandria)
+	  #:alexandria
+	  #:serapeum)
   (:export #:json-reader-enable
 	   #:json-reader-disable
-	   #:*reader-macro-enabled*))
+	   #:*json-reader-enabled*))

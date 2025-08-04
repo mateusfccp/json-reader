@@ -1,11 +1,22 @@
-(defpackage json-reader/tests/main
-  (:use :cl
-        :json-reader
-        :rove))
-(in-package :json-reader/tests/main)
+(in-package #:json-reader/tests)
 
-;; NOTE: To run this test file, execute `(asdf:test-system :json-reader)' in your Lisp.
+;; Make sure that the reader is disabled even if the tests are interrupted for
+;; some reason.
+(teardown
+  (json-reader-disable))
 
-(deftest test-target-1
-  (testing "should (= 1 1) to be true"
-    (ok (= 1 1))))
+(deftest json-reader-enabled-value
+  (json-reader-disable)
+
+  (testing "*json-reader-enabled* should be nil by default."
+    (ok (null *json-reader-enabled*)))
+
+  (json-reader-enable)
+
+  (testing "*json-reader-enabled* should be t after enabling the reader macro."
+    (ng (null *json-reader-enabled*)))
+
+  (json-reader-disable)
+
+  (testing "*json-reader-enabled* should be nil after disabling the reader macro."
+    (ok (null *json-reader-enabled*))))

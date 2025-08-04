@@ -4,7 +4,7 @@
   "Enable the json-reader macro on READTABLE.
 
 If it is already enabled, this functions is a no-op."
-  '(eval-when (:compile-toplevel :load-toplevel :execute)
+  '(eval-always
     (when (null *json-reader-enabled*)
       (setf *old-readtable* *readtable*)
       (setf *readtable* (copy-readtable))
@@ -19,7 +19,7 @@ If it is already enabled, this functions is a no-op."
   "Disable the json-reader macro.
 
 If it is not enabled, this function is a no-op."
-  '(eval-when (:compile-toplevel :load-toplevel :execute)
+  '(eval-always
     (unless (null *json-reader-enabled*)
 
       (setf *readtable* *old-readtable*)

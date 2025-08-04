@@ -1,52 +1,5 @@
 (in-package #:json-reader)
 
-(defun create-json-vector (&rest elements)
-  "Creates a VECTOR based on a LIST of pairs or hashtables.
-
-If the item is a list, it will be spread into the vector."
-  (declare (list elements))
-  (loop
-    for element in elements
-    if (listp element)
-      do (every (lambda (element)
-		  (assert-value-is-valid elements element))
-		element)
-      and append element into result
-    else
-      do (assert-value-is-valid elements element)
-      and collect element into result
-    finally (return (coerce result 'vector))))
-
-(defun create-json-hash-table (&rest elements)
-  "Creates a HASH-TABLE based on a LIST of pairs or hashtables.
-
-If the item is a pair, a new key-value will be added to the HASH-TABLE based on
-the pair value. If it is a HASH-TABLE, its contents will be merged into the one
-being constructed. If it is a list, it will try to interpret this list as a
-potential hashtable my calling CREATE-JSON-HASH-TABLE on it and mergint the
-resulting HASH-TABLE into the original one."
-  (declare (list elements))
-  (loop
-    with hash-table = (make-hash-table :test #'equal)
-    for element in elements
-    if (pairp element)
-      do (let ((key (car element))
-	       (value (cdr element)))
-	   (assert-key-is-valid elements key)
-	   (assert-value-is-valid elements value)
-	   (setf (gethash key hash-table) value))
-    else if (hash-table-p element)
-	   do (serapeum:do-hash-table (key value element)
-		(assert-key-is-valid elements key)
-		(assert-value-is-valid elements value))
-	   and do (setf hash-table (serapeum:merge-tables hash-table element))
-    else if (listp element)
-	   do (setf hash-table
-		    (serapeum:merge-tables hash-table
-					   (apply #'create-json-hash-table element)))
-    else do (error "Invalid type")
-    finally (return hash-table)))
-
 (defun assert-key-is-valid (object key)
   "Throws an error if KEY is not a STRING."
   (unless (stringp key)
@@ -70,6 +23,53 @@ symbols T, NIL and NULL."
     (error 'invalid-json-value
 	   :object object
 	   :value value)))
+
+(defun create-json-vector (&rest elements)
+  "Creates a VECTOR based on a LIST of elements or other LISTS.
+
+If the item is a list, it will be spread into the vector."
+  (declare (list elements))
+  (loop
+    for element in elements
+    if (listp element)
+      do (every (lambda (element)
+		  (assert-value-is-valid elements element))
+		element)
+      and append element into result
+    else
+      do (assert-value-is-valid elements element)
+      and collect element into result
+    finally (return (coerce result 'vector))))
+
+(defun create-json-hash-table (&rest elements)
+  "Creates a HASH-TABLE based on a LIST of pairs or hash tables.
+
+If the item is a pair, a new key-value will be added to the HASH-TABLE based on
+the pair value. If it is a HASH-TABLE, its contents will be merged into the one
+being constructed. If it is a list, it will try to interpret this list as a
+potential hash table my calling CREATE-JSON-HASH-TABLE on it and merging the
+resulting HASH-TABLE into the original one."
+  (declare (list elements))
+  (loop
+    with hash-table = (dict)
+    for element in elements
+    if (pairp element)
+      do (let ((key (car element))
+	       (value (cdr element)))
+	   (assert-key-is-valid elements key)
+	   (assert-value-is-valid elements value)
+	   (setf (gethash key hash-table) value))
+    else if (hash-table-p element)
+	   do (do-hash-table (key value element)
+		(assert-key-is-valid elements key)
+		(assert-value-is-valid elements value))
+	   and do (setf hash-table (merge-tables hash-table element))
+    else if (listp element)
+	   do (setf hash-table
+		    (merge-tables hash-table
+				  (apply #'create-json-hash-table element)))
+    else do (error "Invalid type")
+    finally (return hash-table)))
 
 (defun pairp (element)
   "Returns t if ELEMENT is a dotted pair.
@@ -95,14 +95,14 @@ A dotted pair is a CONS whose CDR is not a CONS."
   "Reads the colon character in a way that tries to allow it to be used as an
 independent symbol but fallback to keyword when followed by other characters."
   (declare (ignore char))
-  (let ((next-char (peek-char nil stream nil nil t)))
-    (if (and next-char (whitespacep next-char))
+  (let ((first-char (peek-char nil stream nil nil t)))
+    (if (and first-char (whitespacep first-char))
         (intern ":")
         (let ((*readtable* (if (and (boundp '*old-readtable*)
                                     (readtablep *old-readtable*))
                                *old-readtable*
                                (copy-readtable nil))))
-          (unread-char #\: stream)
+          (unread-char +colon+ stream)
           (read stream t nil t)))))
 
 (defun read-left-bracket (stream char)

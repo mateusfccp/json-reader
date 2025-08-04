@@ -23,6 +23,11 @@
                "rove")
   :components ((:module "tests"
                 :components
-                ((:file "main"))))
+                ((:file "package")
+		 ;; (:file "globals")
+		 ;; (:file "conditions")
+		 ;; (:file "constants")
+		 (:file "core")
+		 (:file "main"))))
   :description "Test system for json-reader"
   :perform (test-op (op c) (symbol-call :rove :run c)))
