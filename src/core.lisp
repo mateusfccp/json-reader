@@ -71,6 +71,19 @@ resulting HASH-TABLE into the original one."
     else do (error "Invalid type")
     finally (return hash-table)))
 
+(defun consify-colons-on-list (list)
+  (declare (list list))
+  (unless (null list)
+    (flet ((wrap (element)
+	     (cond ((null element) nil)
+		   (t `(,element)))))
+      (destructuring-bind (&optional a b c &rest rest) list
+	(if (and (eq b (intern (string +colon+)))
+		 (not (null c)))
+	    `((cons ,a,c) . ,(consify-colons-on-list rest))
+	    (append (wrap a)
+		    (consify-colons-on-list (append (wrap b) (wrap c) rest))))))))
+
 (defun pairp (element)
   "Returns t if ELEMENT is a dotted pair.
 
@@ -82,12 +95,10 @@ A dotted pair is a CONS whose CDR is not a CONS."
   "Normalize a JSON VALUE to a LISP equivalent."
   (cond
     ((symbolp value)
-     (format t "Symbol is ~A~&" value)
-     (break)
-     (case value
-       (true 't)
-       (false 'nil)
-       (null ''null)
+     (string-case (symbol-name value)
+       ("TRUE" t)
+       ("FALSE" ''nil)
+       ("NULL" 'cl:null)
        (otherwise value)))
     (t value)))
 
@@ -96,8 +107,12 @@ A dotted pair is a CONS whose CDR is not a CONS."
 independent symbol but fallback to keyword when followed by other characters."
   (declare (ignore char))
   (let ((first-char (peek-char nil stream nil nil t)))
-    (if (and first-char (whitespacep first-char))
-        (intern ":")
+    (if (or (null first-char)
+	    (whitespacep first-char))
+	(progn
+          (when first-char
+	    (read-char stream))
+          (intern ":"))
         (let ((*readtable* (if (and (boundp '*old-readtable*)
                                     (readtablep *old-readtable*))
                                *old-readtable*
@@ -116,10 +131,8 @@ VECTOR with the internal elements."
 				       :input-stream stream
 				       :recursive-p t)))
     (loop
-      with normalized-element = nil
       for element in elements
-      do (setf normalized-element (normalize-json-value element))
-      collect normalized-element into result
+      collect element into result
       finally
 	 (return `(create-json-vector ,@result)))))
 
@@ -136,10 +149,8 @@ HASH-TABLE with the internal elements."
 					 :input-stream stream
 					 :recursive-p t)))
       (loop
-	with normalized-element = nil
 	for element in elements
-	do (setf normalized-element (normalize-json-value element))
-	collect normalized-element into result
+	collect element into result
 	finally (return
 		  `(create-json-hash-table ,@result))))))
 
@@ -167,7 +178,7 @@ JSON-COLLECTION-HAS-TRAILING-COMMA error is signaled."
 	     (and (symbolp element)
 		  (eq element (intern (string +comma+))))))
       (reserve-character +comma+ *readtable*)
-      (reserve-character +colon+ *readtable*)
+      ;; (reserve-character +colon+ *readtable*)
       (set-macro-character end-char nil)
       (let ((elements
 	      (read-delimited-list
@@ -193,7 +204,7 @@ JSON-COLLECTION-HAS-TRAILING-COMMA error is signaled."
 			   :after-element last-element)
           else
 	    do (setf should-be-comma t)
-	    and collect element into final-list
+	    and collect (normalize-json-value element) into final-list
 	    and do (setf last-element element)
 	  finally (return
 		    (if (and (not (null final-list))
@@ -201,16 +212,3 @@ JSON-COLLECTION-HAS-TRAILING-COMMA error is signaled."
 			(error 'json-collection-has-trailing-comma
 			       :object elements)
 			final-list)))))))
-
-(defun consify-colons-on-list (list)
-  (declare (list list))
-  (unless (null list)
-    (flet ((wrap (element)
-	     (cond ((null element) nil)
-		   (t `(,element)))))
-      (destructuring-bind (&optional a b c &rest rest) list
-	(if (and (eq b (intern (string +colon+)))
-		 (not (null c)))
-	    `((cons ,a,c) . ,(consify-colons-on-list rest))
-	    (append (wrap a)
-		    (consify-colons-on-list (append (wrap b) (wrap c) rest))))))))

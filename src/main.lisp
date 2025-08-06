@@ -9,9 +9,9 @@ If it is already enabled, this functions is a no-op."
       (setf *old-readtable* *readtable*)
       (setf *readtable* (copy-readtable))
 
+      (set-macro-character +colon+ 'read-colon t)
       (set-macro-character +left-bracket+ 'read-left-bracket)
       (set-macro-character +left-brace+ 'read-left-brace)
-      (set-macro-character +colon+ 'read-colon t)
 
       (setf *json-reader-enabled* t))))
 
