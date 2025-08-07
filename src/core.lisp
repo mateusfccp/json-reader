@@ -154,14 +154,6 @@ HASH-TABLE with the internal elements."
 	finally (return
 		  `(create-json-hash-table ,@result))))))
 
-(defun reserve-character (character &optional (readtable *readtable*))
-  "Reserve CHARACTER to make the reader consider the char it's own function."
-  (declare (character character))
-  (flet ((intern-character (stream char)
-	   (declare (ignore stream char))
-	   (intern (string character))))
-    (set-macro-character character #'intern-character nil readtable)))
-
 (defun read-separated-list (end-char &key
 				       (input-stream *standard-input*)
 				       (recursive-p nil))
@@ -178,10 +170,8 @@ JSON-COLLECTION-HAS-TRAILING-COMMA error is signaled."
 	     (and (symbolp element)
 		  (eq element (intern (string +comma+))))))
       (reserve-character +comma+ *readtable*)
-      ;; (reserve-character +colon+ *readtable*)
-      (set-macro-character end-char nil)
       (let ((elements
-	      (read-delimited-list
+	      (read-delimited-list*
 	       end-char
 	       input-stream
 	       recursive-p)))

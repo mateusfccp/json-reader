@@ -11,6 +11,7 @@
 		 (:file "globals")
 		 (:file "conditions")
 		 (:file "constants")
+		 (:file "reader")
 		 (:file "core")
 		 (:file "main"))))
   :description "A reader macro to read JSON within Common Lisp."
@@ -26,7 +27,7 @@
                 ((:file "package")
 		 ;; (:file "globals")
 		 ;; (:file "conditions")
-		 ;; (:file "constants")
+		 (:file "reader")
 		 (:file "core")
 		 (:file "main"))))
   :description "Test system for json-reader"

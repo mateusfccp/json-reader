@@ -16,6 +16,7 @@
 		#:json-elements-not-separated-by-comma
 		#:normalize-json-value
 		#:pairp
+		#:read-delimited-list*
 		#:read-colon))
 
 ;; NOTE: To run the tests, execute `(asdf:test-system :json-reader)'.
