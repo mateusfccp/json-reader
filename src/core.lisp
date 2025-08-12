@@ -1,5 +1,6 @@
 (in-package #:json-reader)
 
+(-> assert-key-is-valid (t t) boolean)
 (defun assert-key-is-valid (object key)
   "Throws an error if KEY is not a STRING."
   (unless (stringp key)
@@ -7,6 +8,7 @@
 	   :object object
 	   :key key)))
 
+(-> assert-value-is-valid (t t) boolean)
 (defun assert-value-is-valid (object value)
   "Throws an error if VALUE is not a valid JSON value.
 
@@ -24,11 +26,11 @@ symbols T, NIL and NULL."
 	   :object object
 	   :value value)))
 
+(-> create-json-vector (&rest t) vector)
 (defun create-json-vector (&rest elements)
   "Creates a VECTOR based on a LIST of elements or other LISTS.
 
 If the item is a list, it will be spread into the vector."
-  (declare (list elements))
   (loop
     for element in elements
     if (listp element)
@@ -41,6 +43,7 @@ If the item is a list, it will be spread into the vector."
       and collect element into result
     finally (return (coerce result 'vector))))
 
+(-> create-json-hash-table (&rest t) hash-table)
 (defun create-json-hash-table (&rest elements)
   "Creates a HASH-TABLE based on a LIST of pairs or hash tables.
 
@@ -49,7 +52,6 @@ the pair value. If it is a HASH-TABLE, its contents will be merged into the one
 being constructed. If it is a list, it will try to interpret this list as a
 potential hash table my calling CREATE-JSON-HASH-TABLE on it and merging the
 resulting HASH-TABLE into the original one."
-  (declare (list elements))
   (loop
     with hash-table = (dict)
     for element in elements
@@ -71,8 +73,8 @@ resulting HASH-TABLE into the original one."
     else do (error "Invalid type")
     finally (return hash-table)))
 
+(-> consify-colons-on-list (list) list)
 (defun consify-colons-on-list (list)
-  (declare (list list))
   (unless (null list)
     (flet ((wrap (element)
 	     (cond ((null element) nil)
@@ -84,13 +86,7 @@ resulting HASH-TABLE into the original one."
 	    (append (wrap a)
 		    (consify-colons-on-list (append (wrap b) (wrap c) rest))))))))
 
-(defun pairp (element)
-  "Returns t if ELEMENT is a dotted pair.
-
-A dotted pair is a CONS whose CDR is not a CONS."
-  (and (consp element)
-       (not (listp (cdr element)))))
-
+(-> normalize-json-value (t) t)
 (defun normalize-json-value (value)
   "Normalize a JSON VALUE to a LISP equivalent."
   (cond
@@ -102,15 +98,16 @@ A dotted pair is a CONS whose CDR is not a CONS."
        (otherwise value)))
     (t value)))
 
-(defun read-colon (stream char)
+(-> read-colon (stream character))
+(defun read-colon (stream character)
   "Reads the colon character in a way that tries to allow it to be used as an
 independent symbol but fallback to keyword when followed by other characters."
-  (declare (ignore char))
-  (let ((first-char (peek-char nil stream nil nil t)))
-    (if (or (null first-char)
-	    (whitespacep first-char))
+  (declare (ignore character))
+  (let ((next-character (peek-char nil stream nil nil t)))
+    (if (or (null next-character)
+	    (whitespacep next-character))
 	(progn
-          (when first-char
+          (when next-character
 	    (read-char stream))
           (intern ":"))
         (let ((*readtable* (if (and (boundp '*old-readtable*)
@@ -120,13 +117,14 @@ independent symbol but fallback to keyword when followed by other characters."
           (unread-char +colon+ stream)
           (read stream t nil t)))))
 
-(defun read-left-bracket (stream char)
+(-> read-colon (stream character))
+(defun read-left-bracket (stream character)
   "Reads the left bracket character and parses the remaining STREAM with
 READ-NEXT-OBJECT.
 
 This will try to parse the given STREAM like a JSON list, and will return a
 VECTOR with the internal elements."
-  (declare (ignore char))
+  (declare (ignore character))
   (let ((elements (read-separated-list +right-bracket+
 				       :input-stream stream
 				       :recursive-p t)))
@@ -136,13 +134,14 @@ VECTOR with the internal elements."
       finally
 	 (return `(create-json-vector ,@result)))))
 
-(defun read-left-brace (stream char)
+(-> read-left-brace (stream character))
+(defun read-left-brace (stream character)
   "Reads the left brace character and parses the remaining STREAM with
 READ-NEXT-OBJECT.
 
 This will try to parse the given STREAM like a JSON object, and will return a
 HASH-TABLE with the internal elements."
-  (declare (ignore char))
+  (declare (ignore character))
   (let ((*readtable* (copy-readtable)))
     (reserve-character +colon+)
     (let ((elements (read-separated-list +right-brace+
@@ -154,6 +153,7 @@ HASH-TABLE with the internal elements."
 	finally (return
 		  `(create-json-hash-table ,@result))))))
 
+(-> read-separeated-list (character &key (input-stream input-stream) (recursive-p boolean)) list)
 (defun read-separated-list (end-char &key
 				       (input-stream *standard-input*)
 				       (recursive-p nil))
@@ -162,9 +162,6 @@ HASH-TABLE with the internal elements."
 Returns a list of lists, in which each sublist is the elements that were
 separated by the SEPARTOR. If a trailing separator is found, a
 JSON-COLLECTION-HAS-TRAILING-COMMA error is signaled."
-  (declare (character end-char)
-	   (stream)
-	   (boolean recursive-p))
   (let ((*readtable* (copy-readtable)))
     (flet ((is-comma (element)
 	     (and (symbolp element)

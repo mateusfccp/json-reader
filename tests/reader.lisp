@@ -44,4 +44,16 @@
           (ok (equal result-list '(a b c))
               "Should work with any specified delimiter char")
           (ok (eql (read s) 'd)
-              "The next item should be readable after the list"))))))
+              "The next item should be readable after the list")))))
+
+  (testing "Content after the last delimiter remains in the stream"
+    (let ((test-string "a b ] c d ] e f"))
+      (with-input-from-string (s test-string)
+	(let ((result-list (read-delimited-list* #\] s)))
+          (ok (equal result-list '(a b |]| c d))
+              "Should parse the list up to the final delimiter."))
+
+        (ok (eq (read s nil) 'e)
+            "The first item after the last delimiter should be readable.")
+        (ok (eq (read s nil) 'f)
+            "The second item after the last delimiter should also be readable.")))))

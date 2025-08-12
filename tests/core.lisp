@@ -133,13 +133,6 @@
     (ng (signals (create-json-hash-table '("foo" . null))))
     (ng (signals (create-json-hash-table '("foo" . "bar"))))))
 
-(deftest pairp
-  (testing "A pair is a cons cell with a car and a non-list cdr."
-    (ok (pairp '("foo" . "bar")))
-    (ng (pairp '("foo" . ("bar" . "baz"))))
-    (ng (pairp nil))
-    (ng (pairp '("foo" "bar")))))
-
 (deftest json-to-lisp-normalization
   (testing "Non-symbols shouldn't be normalized."
     (ok (eq (normalize-json-value *object*) *object*))
@@ -202,7 +195,26 @@
 
   (testing "A list should generate a vector with its contents."
     (with-json-reader vector "[1, 2, 3]"
-      (ok (equalp vector #(1 2 3)))))
+      (ok (equalp vector #(1 2 3))
+	  "Simple number list"))
+
+    (with-json-reader vector "[\"foo\", \"bar\"]"
+      (ok (equalp vector #("foo" "bar"))
+	  "Simple string list"))
+
+    (with-json-reader vector "[0, 1, [2, 3], 4]"
+      (ok (equalp vector #(0 1 #(2 3) 4))
+	  "Nested lists"))
+
+    ;; (with-json-reader vector "[{}, {\"foo\": \"bar\"}]"
+    ;;   (ok (equalp vector #((dict) (dict "foo" "bar")))
+    ;; 	  "List with object"))
+
+    ;; (with-json-reader vector
+    ;; 	"[0, 0.0, \"bar\", true, false, [0], {\"foo\": \"bar\"}, null]"
+    ;;   (ok (equalp vector #("foo" "bar"))
+    ;; 	  "Mixed values"))
+    )
 
   (testing "A list shouldn't have a trailing comma."
     (ok (signals (read-from-string "[1, 2, 3,]")
@@ -212,7 +224,7 @@
     (ok (signals (read-from-string "[1, 2 3]")
 	    'json-elements-not-separated-by-comma)))
 
-  (testing "Using non-JSON elements should be an error."
+  (testing "Using non-JSON elements in list should signal an error."
     (ok (signals (eval (read-from-string "[1, 2, 'eq]"))
 	    'invalid-json-value)
 	"Quoted symbol")

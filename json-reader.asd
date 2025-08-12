@@ -11,6 +11,7 @@
 		 (:file "globals")
 		 (:file "conditions")
 		 (:file "constants")
+		 (:file "predicates")
 		 (:file "reader")
 		 (:file "core")
 		 (:file "main"))))
@@ -25,7 +26,7 @@
   :components ((:module "tests"
                 :components
                 ((:file "package")
-		 ;; (:file "globals")
+		 (:file "predicates")
 		 ;; (:file "conditions")
 		 (:file "reader")
 		 (:file "core")
