@@ -98,26 +98,7 @@ resulting HASH-TABLE into the original one."
        (otherwise value)))
     (t value)))
 
-(-> read-colon (stream character))
-(defun read-colon (stream character)
-  "Reads the colon character in a way that tries to allow it to be used as an
-independent symbol but fallback to keyword when followed by other characters."
-  (declare (ignore character))
-  (let ((next-character (peek-char nil stream nil nil t)))
-    (if (or (null next-character)
-	    (whitespacep next-character))
-	(progn
-          (when next-character
-	    (read-char stream))
-          (intern ":"))
-        (let ((*readtable* (if (and (boundp '*old-readtable*)
-                                    (readtablep *old-readtable*))
-                               *old-readtable*
-                               (copy-readtable nil))))
-          (unread-char +colon+ stream)
-          (read stream t nil t)))))
-
-(-> read-colon (stream character))
+(-> read-left-bracket (stream character))
 (defun read-left-bracket (stream character)
   "Reads the left bracket character and parses the remaining STREAM with
 READ-NEXT-OBJECT.
@@ -125,9 +106,11 @@ READ-NEXT-OBJECT.
 This will try to parse the given STREAM like a JSON list, and will return a
 VECTOR with the internal elements."
   (declare (ignore character))
-  (let ((elements (read-separated-list +right-bracket+
-				       :input-stream stream
-				       :recursive-p t)))
+  (let ((elements (read-separated-list
+		   +left-bracket+
+		   +right-bracket+
+		   :input-stream stream
+		   :recursive-p t)))
     (loop
       for element in elements
       collect element into result
@@ -144,7 +127,8 @@ HASH-TABLE with the internal elements."
   (declare (ignore character))
   (let ((*readtable* (copy-readtable)))
     (reserve-character +colon+)
-    (let ((elements (read-separated-list +right-brace+
+    (let ((elements (read-separated-list +left-brace+
+					 +right-brace+
 					 :input-stream stream
 					 :recursive-p t)))
       (loop
@@ -153,10 +137,17 @@ HASH-TABLE with the internal elements."
 	finally (return
 		  `(create-json-hash-table ,@result))))))
 
-(-> read-separeated-list (character &key (input-stream input-stream) (recursive-p boolean)) list)
-(defun read-separated-list (end-char &key
-				       (input-stream *standard-input*)
-				       (recursive-p nil))
+(-> read-separeated-list (character
+			  character
+			  &key
+			  (input-stream input-stream)
+			  (recursive-p boolean))
+    list)
+(defun read-separated-list (opening-delimiter
+			    closing-delimiter
+			    &key
+			      (input-stream *standard-input*)
+			      (recursive-p nil))
   "Reads a list of elements from the INPUT-STREAM separated by the SEPARATOR.
 
 Returns a list of lists, in which each sublist is the elements that were
@@ -169,7 +160,8 @@ JSON-COLLECTION-HAS-TRAILING-COMMA error is signaled."
       (reserve-character +comma+ *readtable*)
       (let ((elements
 	      (read-delimited-list*
-	       end-char
+	       opening-delimiter
+	       closing-delimiter
 	       input-stream
 	       recursive-p)))
 	(loop

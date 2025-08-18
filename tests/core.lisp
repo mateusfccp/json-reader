@@ -206,9 +206,9 @@
       (ok (equalp vector #(0 1 #(2 3) 4))
 	  "Nested lists"))
 
-    ;; (with-json-reader vector "[{}, {\"foo\": \"bar\"}]"
-    ;;   (ok (equalp vector #((dict) (dict "foo" "bar")))
-    ;; 	  "List with object"))
+    (with-json-reader vector "[{}, {\"foo\": \"bar\"}]"
+      (ok (equalp vector #((dict) (dict "foo" "bar")))
+	  "List with object"))
 
     ;; (with-json-reader vector
     ;; 	"[0, 0.0, \"bar\", true, false, [0], {\"foo\": \"bar\"}, null]"
@@ -216,24 +216,44 @@
     ;; 	  "Mixed values"))
     )
 
-  (testing "A list shouldn't have a trailing comma."
+  (testing "Trailing commas shouldn't be allowed."
     (ok (signals (read-from-string "[1, 2, 3,]")
-	    'json-collection-has-trailing-comma)))
+	    'json-collection-has-trailing-comma)
+	"List")
 
-  (testing "All elements in a list should be separated by a comma."
+    (ok (signals (read-from-string "{\"foo\": 0, \"bar\": 1,}")
+	    'json-collection-has-trailing-comma)
+	"Object"))
+
+  (testing "All elements in a collection should be separated by a comma."
     (ok (signals (read-from-string "[1, 2 3]")
-	    'json-elements-not-separated-by-comma)))
+	    'json-elements-not-separated-by-comma)
+	"List")
+    (ok (signals (read-from-string "{\"foo\": 0, \"bar\": 1 \"baz\": 2}")
+	    'json-elements-not-separated-by-comma)
+	"Object"))
 
-  (testing "Using non-JSON elements in list should signal an error."
-    (ok (signals (eval (read-from-string "[1, 2, 'eq]"))
-	    'invalid-json-value)
-	"Quoted symbol")
-    (ok (signals (eval (read-from-string "[1, 2, #'eq]"))
-	    'invalid-json-value)
-	"Function")
-    (ok (signals (eval (read-from-string "[1, 2, :foo]"))
-	    'invalid-json-value)
-	"Keyword"))
+  (testing "Using non-JSON elements in a collection should signal an error."
+    (testing "List"
+      (ok (signals (eval (read-from-string "[1, 2, 'eq]"))
+	      'invalid-json-value)
+	  "Quoted symbol")
+      (ok (signals (eval (read-from-string "[1, 2, #'eq]"))
+	      'invalid-json-value)
+	  "Function")
+      (ok (signals (eval (read-from-string "[1, 2, :foo]"))
+	      'invalid-json-value)
+	  "Keyword"))
+    (testing "Object"
+      (ok (signals (eval (read-from-string "{\"foo\": 1, \"bar\": 2, \"baz\": 'eq}"))
+	      'invalid-json-value)
+	  "Quoted symbol")
+      (ok (signals (eval (read-from-string "{\"foo\": 1, \"bar\": 2, \"baz\": #'eq}"))
+	      'invalid-json-value)
+	  "Function")
+      (ok (signals (eval (read-from-string "{\"foo\": 1, \"bar\": 2, \"baz\": :baz}"))
+	      'invalid-json-value)
+	  "Keyword")))
   
   (testing "An object should be read as a hash table."
     (with-json-reader hash-table "{}"
@@ -246,5 +266,22 @@
   (testing "An object TEST slot should be EQUAL."
     (with-json-reader hash-table "{}"
       (ok (eq (hash-table-test hash-table) 'equal))))
+
+  (testing "A object should generate a hash table with its contents."
+    (with-json-reader hash-table "{\"foo\": \"bar\"}"
+      (ok (equalp hash-table (dict "foo" "bar"))
+	  "Single key with string value"))
+
+    (with-json-reader hash-table "{\"foo\": 10}"
+      (ok (equalp hash-table (dict "foo" 10))
+	  "Single key with int value"))
+    
+    (with-json-reader hash-table "{\"foo\": \"bar\", \"baz\": \"qux\"}"
+      (ok (equalp hash-table (dict "foo" "bar" "baz" "qux"))
+	  "Multiple keys"))
+
+    (with-json-reader hash-table "{\"foo\": [10]}"
+      (ok (equalp hash-table (dict "foo" #(10)))
+	  "Single key with list value")))
 
   (json-reader-disable))

@@ -1,46 +1,35 @@
 (in-package #:json-reader)
 
-(-> read-delimited-list* (character &optional stream boolean) list)
-(defun read-delimited-list* (delimiter &optional
-					 (stream *standard-input*)
-					 recursive-p)
-  "Reads a list of objects from a stream up to the LAST occurrence of DELIMITER.
-
-If DELIMITER is found, the function returns the list of objects read before that
-final delimiter. All characters after the final delimiter are pushed back onto
-the stream.
-
-If no delimiter is found before the end of the stream, an `end-of-file` error is
-signaled."
+(-> read-delimited-list* (character character &optional stream boolean) list)
+(defun read-delimited-list* (opening-delimiter
+			     closing-delimiter
+			     &optional
+			       (stream *standard-input*)
+			       recursive-p)
+  "Reads a list of objects from a stream up to the corresponding CLOSING-DELIMITER."
   (loop
-    with result-buffer = (make-string-output-stream)
-    with pending-buffer = (make-string-output-stream)
-    for character = (read-char stream nil nil recursive-p)
-    while character
-    do (if (char= character delimiter)
-           (progn
-             (write-string (get-output-stream-string pending-buffer) result-buffer)
-             (write-char character result-buffer)
-             (setf pending-buffer (make-string-output-stream)))
-           (write-char character pending-buffer))
+    with nesting-level = 0
+    with buffer = (make-string-output-stream)
+    for character = (read-char stream t nil recursive-p)
+    while (or (plusp nesting-level)
+	      (char/= character closing-delimiter))
+    do (progn
+	 (cond ((char= character opening-delimiter)
+		(incf nesting-level))
+	       ((char= character closing-delimiter)
+		(decf nesting-level)))
+	 (write-char character buffer))
     finally
-       ;; Unread pending characters so they can be used afterwards.
-       (loop
-	 for character across (reverse (get-output-stream-string pending-buffer))
-         do (unread-char character stream))
-
        ;; Parse the result-buffer if it contains anything.
-       ;; This will only be the case if at least one delimiter was found.
-       (let ((result-string (get-output-stream-string result-buffer)))
-         (if (plusp (length result-string))
-           (let ((string-to-parse (subseq result-string 0 (1- (length result-string)))))
-             (when (plusp (length string-to-parse))
-               (with-input-from-string (s string-to-parse)
-                 (return
-		   (loop for item = (read s nil :eof)
-			 until (eq item :eof)
-			 collect item)))))
-	   (error 'end-of-file :stream stream)))))
+       ;; This will only be the case if at least one closing-delimiter was found.
+       (let ((content (get-output-stream-string buffer)))
+         (if (plusp (length content))
+             (with-input-from-string (stream content)
+               (return
+		 (loop for item = (read stream nil :eof)
+		       until (eq item :eof)
+		       do (format t "Read: ~A~&" item)
+		       collect item)))))))
 
 (-> intern-character (stream character))
 (defun intern-character (stream character)
@@ -52,4 +41,29 @@ signaled."
 (defun reserve-character (character &optional (readtable *readtable*))
   "Reserve CHARACTER to make the reader consider the char it's own function."
   (set-macro-character character #'intern-character nil readtable))
+
+(-> read-colon (stream character))
+(defun read-colon (stream character)
+  "Reads the colon character in a way that tries to allow it to be used as an
+independent symbol but fallback to keyword when followed by other characters."
+  (declare (ignore character))
+  (let ((next-character (peek-char nil stream nil nil t)))
+    (if (or (null next-character)
+	    (whitespacep next-character))
+	(progn
+	  (break "Interning comma")
+          (when next-character
+	    (read-char stream))
+          (intern ":"))
+        (let ((*readtable*
+		(if (and (boundp '*old-readtable*)
+                         (readtablep *old-readtable*))
+                    *old-readtable*
+                    (copy-readtable nil))))
+          (progn
+	    (break "Reading entire expression")
+	    (unread-char +colon+ stream))
+          (progn
+	    (break "Fallback")
+	    (read stream t nil t))))))
 
