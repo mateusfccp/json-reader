@@ -28,7 +28,6 @@
                (return
 		 (loop for item = (read stream nil :eof)
 		       until (eq item :eof)
-		       do (format t "Read: ~A~&" item)
 		       collect item)))))))
 
 (-> intern-character (stream character))
@@ -51,7 +50,6 @@ independent symbol but fallback to keyword when followed by other characters."
     (if (or (null next-character)
 	    (whitespacep next-character))
 	(progn
-	  (break "Interning comma")
           (when next-character
 	    (read-char stream))
           (intern ":"))
@@ -60,10 +58,6 @@ independent symbol but fallback to keyword when followed by other characters."
                          (readtablep *old-readtable*))
                     *old-readtable*
                     (copy-readtable nil))))
-          (progn
-	    (break "Reading entire expression")
-	    (unread-char +colon+ stream))
-          (progn
-	    (break "Fallback")
-	    (read stream t nil t))))))
+	  (unread-char +colon+ stream)
+	  (read stream t nil t)))))
 

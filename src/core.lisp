@@ -126,7 +126,6 @@ This will try to parse the given STREAM like a JSON object, and will return a
 HASH-TABLE with the internal elements."
   (declare (ignore character))
   (let ((*readtable* (copy-readtable)))
-    (reserve-character +colon+)
     (let ((elements (read-separated-list +left-brace+
 					 +right-brace+
 					 :input-stream stream
@@ -137,21 +136,21 @@ HASH-TABLE with the internal elements."
 	finally (return
 		  `(create-json-hash-table ,@result))))))
 
-(-> read-separeated-list (character
-			  character
-			  &key
-			  (input-stream input-stream)
-			  (recursive-p boolean))
+(-> read-separated-list (character
+			 character
+			 &key
+			 (:input-stream input-stream)
+			 (:recursive-p boolean))
     list)
 (defun read-separated-list (opening-delimiter
 			    closing-delimiter
 			    &key
 			      (input-stream *standard-input*)
 			      (recursive-p nil))
-  "Reads a list of elements from the INPUT-STREAM separated by the SEPARATOR.
+  "Reads a list of elements from the INPUT-STREAM separated by comma.
 
 Returns a list of lists, in which each sublist is the elements that were
-separated by the SEPARTOR. If a trailing separator is found, a
+separated by a comma. If a trailing separator is found, a
 JSON-COLLECTION-HAS-TRAILING-COMMA error is signaled."
   (let ((*readtable* (copy-readtable)))
     (flet ((is-comma (element)
