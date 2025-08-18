@@ -86,6 +86,6 @@ place in the JSON expression. ")
     (write-line (format nil "In object: ~A" object) stream)
     (write-line "" stream)
     (write-line "Expected value either a value of type STRING, INTEGER, FLOAT, 
-VECTOR or HASH-TABLE or the symbols T, NIL or NUKLL." stream)
+VECTOR or HASH-TABLE or the symbols T, NIL or NULL." stream)
     (write-line "" stream)
     (write-line (format nil "Value ~A has type ~A." value (type-of value)) stream)))
