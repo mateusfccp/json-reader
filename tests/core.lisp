@@ -207,7 +207,7 @@
 	  "Nested lists"))
 
     (with-json-reader vector "[{}, {\"foo\": \"bar\"}]"
-      (ok (equalp vector #((dict) (dict "foo" "bar")))
+      (ok (equalp vector (vector (dict) (dict "foo" "bar")))
 	  "List with object"))
 
     ;; (with-json-reader vector
